@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Car Escape: Infinite Pursuit (Level 900+ Edition)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #080c14;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #fff;
+    }
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at center, #1b2838 0%, #080c14 100%);
+    }
+    canvas {
+      display: block;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+      border-radius: 12px;
+      background-color: #111827;
+    }
+    
+    /* HUD Bar styling */
+    #hud {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hud-card {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 18px;
+      border-radius: 14px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      min-width: 110px;
+    }
+    .hud-btn {
+      pointer-events: auto;
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 13px;
+      box-shadow: 0 4px 15px rgba(225, 29, 72, 0.4);
+      transition: all 0.2s ease;
+    }
+    .hud-btn:active {
+      transform: scale(0.94);
+    }
+    .score-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 2px;
+    }
+    .score-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #38bdf8;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+    .level-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #f59e0b;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    .timer-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #10b981;
+      text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+    
+    /* On-Screen Touch Controls */
+    #touch-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+    .control-btn {
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 22px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      transition: background 0.1s, transform 0.05s;
+    }
+    .control-btn:active, .control-btn.active {
+      background: rgba(56, 189, 248, 0.85);
+      transform: scale(0.92);
+      border-color: #7dd3fc;
+    }
+    .btn-drift {
+      background: rgba(225, 29, 72, 0.75);
+      border-color: rgba(253, 164, 175, 0.4);
+      width: 65px;
+      height: 65px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    /* Screen Overlay Styling */
+    .screen-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 12, 20, 0.94);
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      text-align: center;
+      padding: 20px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .title-text {
+      font-size: 34px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      max-width: 440px;
+      line-height: 1.5;
+    }
+    .primary-btn {
+      padding: 14px 40px;
+      font-size: 17px;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 25px rgba(2, 132, 199, 0.5);
+      transition: all 0.2s ease;
+    }
+    .primary-btn:active {
+      transform: scale(0.95);
+    }
+    .secondary-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 10px 22px;
+      border-radius: 30px;
+      color: #e2e8f0;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    .secondary-btn:active {
+      background: rgba(255,255,255,0.18);
+    }
+    
+    /* Motivational Box */
+    .motivation-box {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 14px;
+      padding: 16px 22px;
+      margin: 10px 0 20px 0;
+      max-width: 460px;
+      color: #38bdf8;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
+      line-height: 1.5;
+    }
+
+    /* Modal Content Container */
+    .box-container {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 18px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      text-align: left;
+      margin-bottom: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .leaderboard-table th, .leaderboard-table td {
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .leaderboard-table tr:nth-child(even) {
+      background: rgba(255,255,255,0.03);
+    }
+    
+    /* Animated Level Banner */
+    #levelBanner {
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 38px;
+      font-weight: 900;
+      color: #f59e0b;
+      text-shadow: 0 0 30px rgba(245, 158, 11, 0.9), 0 0 10px rgba(255, 255, 255, 0.8);
+      pointer-events: none;
+      z-index: 15;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+  <div id="levelBanner">LEVEL 1</div>
+
+  <!-- HUD Bar -->
+  <div id="hud" class="hidden">
+    <button class="hud-btn" id="backBtn">🔙 ব্যাক</button>
+    
+    <div class="hud-card">
+      <div class="score-title">লেভেল (Target)</div>
+      <div id="levelDisplay" class="level-value">Lvl 1 (300)</div>
+    </div>
+
+    <div class="hud-card">
+      <div class="score-title">সময় / Time</div>
+      <div id="timerDisplay" class="timer-value">00:00</div>
+    </div>
+
+    <div class="hud-card">
+      <div class="score-title">স্কোর / Score</div>
+      <div id="scoreDisplay" class="score-value">0</div>
+    </div>
+  </div>
+
+  <!-- Touch Controls -->
+  <div id="touch-controls">
+    <div class="btn-group">
+      <div class="control-btn" id="btnLeft">◄</div>
+      <div class="control-btn" id="btnRight">►</div>
+    </div>
+    <div class="btn-group">
+      <div class="control-btn btn-drift" id="btnDrift">DRIFT</div>
+      <div class="control-btn" id="btnBack">▼</div>
+      <div class="control-btn" id="btnGas">▲</div>
+    </div>
+  </div>
+
+  <!-- Start Screen -->
+  <div id="startScreen" class="screen-overlay">
+    <div class="title-text">Car Escape: Infinite Pursuit</div>
+    
+    <button class="primary-btn" id="startBtn">গেম শুরু করুন 🚗</button>
+    <div style="display: flex; gap: 12px;">
+      <button class="secondary-btn" id="leaderboardBtn">🏆 হাই স্কোর</button>
+      <button class="secondary-btn" id="guideBtn">❓ গেম নিয়মাবলি</button>
+    </div>
+  </div>
+
+  <!-- Leaderboard Screen -->
+  <div id="leaderboardScreen" class="screen-overlay hidden">
+    <div class="box-container">
+      <h3 style="margin:0 0 12px 0; color:#38bdf8;">🏆 সেরা রেকর্ডসমূহ (Top 5)</h3>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>লেভেল</th>
+            <th>স্কোর</th>
+            <th>সময়</th>
+            <th>তারিখ</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+    </div>
+    <button class="primary-btn" id="closeLeaderboardBtn">ফিরে যান</button>
+  </div>
+
+  <!-- How to Play Screen -->
+  <div id="guideScreen" class="screen-overlay hidden">
+    <div class="box-container">
+      <h3 style="margin:0 0 12px 0; color:#38bdf8;">গেম নিয়মাবলি (Level 900+ Optimized)</h3>
+      <ul style="padding-left: 18px; font-size: 13.5px; color: #cbd5e1; line-height: 1.6;">
+        <li><b>Infinite Levels:</b> ১ থেকে শুরু করে লেভেল ৯০০ এবং ১০০০+ পর্যন্ত খেলা সম্ভব!</li>
+        <li><b>Level Target:</b> প্রতি লেভেলে টার্গেট = <code style="color:#f59e0b;">Current Level × 300</code>। (Level 900 target = 270,000 pts).</li>
+        <li><b>কয়েন বোনাস:</b> গোল্ডেন কয়েন কুড়ালে তাৎক্ষণিক <b>+১০০ বোনাস পয়েন্ট</b> পাওয়া যায়।</li>
+        <li><b>Smooth AI Curve:</b> উচ্চ লেভেলে (Level 900+) পুলিশ অতিরিক্ত স্পিড পেলেও প্লেয়ারের চেয়ে অসম্ভব দ্রুত হবে না, যেন গেমার নিজের নিখুঁত ড্রাইভিং স্কিল দিয়ে দীর্ঘ সময় টিকে থাকতে পারে।</li>
+        <li><b>কন্ট্রোল:</b> Up/W = গ্যাস, Down/S = রিভার্স, Left/Right = স্টিয়ারিং, Space = ড্রিফ্ট।</li>
+      </ul>
+    </div>
+    <button class="primary-btn" id="closeGuideBtn">বুঝেছি</button>
+  </div>
+
+  <!-- Motivational Game Over Screen -->
+  <div id="gameOverScreen" class="screen-overlay hidden">
+    <div style="font-size: 48px; margin-bottom: 5px;">🏁</div>
+    <div class="title-text" style="color: #f59e0b; background: none; -webkit-text-fill-color: initial;">চমৎকার রেস!</div>
+    
+    <div class="motivation-box" id="motivationMsg">
+      "অসাধারণ ড্রাইভ! প্রতি চেষ্টার সাথে আপনার দক্ষতা বাড়ছে।"
+    </div>
+
+    <div class="subtitle" id="finalLevelText" style="color: #38bdf8; font-weight: bold; font-size: 16px;">পৌঁছেছিলেন: Level 1</div>
+    <div class="subtitle" id="finalScoreText" style="margin-top:-12px;">মোট স্কোর: 0</div>
+    <div class="subtitle" id="finalTimeText" style="color: #10b981; margin-top:-12px;">টিকে থাকার সময়: 00:00</div>
+
+    <button class="primary-btn" id="restartBtn">আবার চেষ্টা করুন 🔄</button>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    canvas.width = Math.min(window.innerWidth, 960);
+    canvas.height = Math.min(window.innerHeight, 720);
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function formatTime(totalSeconds) {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = Math.floor(totalSeconds % 60);
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  // Web Audio Synth for procedural sound effects
+  class SoundEffects {
+    constructor() { this.ctx = null; }
+    init() { 
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+    playTone(freq, duration, type = 'sine', gainVal = 0.1) {
+      if (!this.ctx) return;
+      try {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      } catch (e) { /* ignore audio errors */ }
+    }
+    coin() { this.playTone(980, 0.12, 'sine', 0.15); }
+    levelUp() { 
+      this.playTone(523, 0.12, 'triangle', 0.2);
+      setTimeout(() => this.playTone(659, 0.12, 'triangle', 0.2), 90);
+      setTimeout(() => this.playTone(784, 0.2, 'triangle', 0.2), 180);
+    }
+    crash() { this.playTone(90, 0.4, 'sawtooth', 0.3); }
+  }
+  const sound = new SoundEffects();
+
+  // Input Controls State
+  const keys = { left: false, right: false, gas: false, back: false, drift: false };
+
+  window.addEventListener('keydown', e => {
+    sound.init();
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.gas = true;
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.back = true;
+    if (e.key === ' ') keys.drift = true;
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.gas = false;
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.back = false;
+    if (e.key === ' ') keys.drift = false;
+  });
+
+  function setupTouchBtn(id, keyProp) {
+    const btn = document.getElementById(id);
+    const start = (e) => { e.preventDefault(); keys[keyProp] = true; btn.classList.add('active'); sound.init(); };
+    const end = (e) => { e.preventDefault(); keys[keyProp] = false; btn.classList.remove('active'); };
+    btn.addEventListener('touchstart', start, { passive: false });
+    btn.addEventListener('touchend', end, { passive: false });
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup', end);
+    btn.addEventListener('mouseleave', end);
+  }
+  setupTouchBtn('btnLeft', 'left');
+  setupTouchBtn('btnRight', 'right');
+  setupTouchBtn('btnGas', 'gas');
+  setupTouchBtn('btnBack', 'back');
+  setupTouchBtn('btnDrift', 'drift');
+
+  // Core Game Variables
+  let gameState = 'START';
+  let score = 0;
+  let level = 1;
+  let gameTime = 0;
+  let camera = { x: 0, y: 0 };
+  let particles = [];
+  let coins = [];
+  let copCars = [];
+
+  const player = {
+    x: 0, y: 0, angle: 0, speed: 0, maxSpeed: 7.5, maxReverseSpeed: -3.5, accel: 0.22, friction: 0.965, turnSpeed: 0.054, driftFactor: 0.91, radius: 18,
+    reset() {
+      this.x = 0;
+      this.y = 0;
+      this.angle = -Math.PI / 2;
+      this.speed = 0;
+    },
+    update() {
+      let turnMultiplier = keys.drift ? 1.65 : 1.0;
+      let dir = this.speed >= 0 ? 1 : -1;
+      
+      if (keys.left) this.angle -= this.turnSpeed * turnMultiplier * dir * (Math.abs(this.speed) / this.maxSpeed + 0.22);
+      if (keys.right) this.angle += this.turnSpeed * turnMultiplier * dir * (Math.abs(this.speed) / this.maxSpeed + 0.22);
+
+      if (keys.gas) {
+        this.speed = Math.min(this.speed + this.accel, this.maxSpeed);
+      } else if (keys.back) {
+        this.speed = Math.max(this.speed - this.accel, this.maxReverseSpeed);
+      } else {
+        this.speed *= this.friction;
+      }
+
+      const drift = keys.drift ? this.driftFactor : 0.985;
+      this.x += Math.cos(this.angle) * this.speed * drift;
+      this.y += Math.sin(this.angle) * this.speed * drift;
+
+      // Particle smoke trail when drifting
+      if (keys.drift && Math.abs(this.speed) > 2) {
+        particles.push({
+          x: this.x - Math.cos(this.angle) * 16,
+          y: this.y - Math.sin(this.angle) * 16,
+          life: 1.0,
+          size: Math.random() * 4 + 3,
+          color: 'rgba(148, 163, 184, 0.6)'
+        });
+      }
+    },
+    draw() {
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.rotate(this.angle);
+
+      // Car Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(-18, -10, 38, 22);
+
+      // Main Body
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.roundRect(-16, -10, 32, 20, 5);
+      ctx.fill();
+
+      // Roof
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath();
+      ctx.roundRect(-6, -7, 14, 14, 3);
+      ctx.fill();
+
+      // Headlights
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(14, -8, 3, 4);
+      ctx.fillRect(14, 4, 3, 4);
+
+      // Brake / Taillights
+      ctx.fillStyle = keys.back ? '#ef4444' : '#991b1b';
+      ctx.fillRect(-16, -8, 2, 4);
+      ctx.fillRect(-16, 4, 2, 4);
+
+      ctx.restore();
+    }
+  };
+
+  class CopCar {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.angle = Math.random() * Math.PI * 2;
+      this.radius = 18;
+    }
+    update() {
+      // Logarithmic curve: Smoothly increases difficulty up to level 900 and 1000+ without instant-kill jumps
+      // Math.log10(1 + level) ensures high levels remain playable through player skill
+      const logBoost = Math.log10(1 + level);
+      
+      // Speed scales smoothly towards a safe ratio of player speed (caps around ~7.15 vs player's 7.5 max speed)
+      this.speed = Math.min(player.maxSpeed * 0.95, 3.6 + logBoost * 1.22);
+
+      const targetAngle = Math.atan2(player.y - this.y, player.x - this.x);
+      let diff = targetAngle - this.angle;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      
+      // Agility smooth scaling: turning agility caps around ~0.082 rad/frame so player can dodge with sharp turns
+      const turnAgility = Math.min(0.082, 0.038 + logBoost * 0.015);
+      this.angle += Math.sign(diff) * Math.min(Math.abs(diff), turnAgility);
+
+      this.x += Math.cos(this.angle) * this.speed;
+      this.y += Math.sin(this.angle) * this.speed;
+    }
+    draw() {
+      ctx.save();
+      ctx.translate(this.x - camera.x, this.y - camera.y);
+      ctx.rotate(this.angle);
+
+      // Police Car Body
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.roundRect(-16, -10, 32, 20, 5);
+      ctx.fill();
+
+      // Roof
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-6, -7, 14, 14);
+
+      // Flashing Emergency Lights
+      const lightToggle = Math.floor(Date.now() / 120) % 2 === 0;
+      ctx.fillStyle = lightToggle ? '#ef4444' : '#3b82f6';
+      ctx.fillRect(-2, -6, 6, 12);
+
+      ctx.restore();
+    }
+  }
+
+  function showLevelBanner(lvlText) {
+    const banner = document.getElementById('levelBanner');
+    banner.innerText = lvlText;
+    banner.style.opacity = '1';
+    banner.style.transform = 'translate(-50%, -50%) scale(1.1)';
+    setTimeout(() => { 
+      banner.style.opacity = '0'; 
+      banner.style.transform = 'translate(-50%, -50%) scale(0.9)';
+    }, 1800);
+  }
+
+  function spawnCoinsNearPlayer(count = 10) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 180 + Math.random() * 450;
+      coins.push({
+        x: player.x + Math.cos(angle) * dist,
+        y: player.y + Math.sin(angle) * dist,
+        collected: false
+      });
+    }
+  }
+
+  function spawnCop() {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 550 + Math.random() * 250;
+    copCars.push(new CopCar(player.x + Math.cos(angle) * dist, player.y + Math.sin(angle) * dist));
+  }
+
+  function checkLevelProgression() {
+    // Current Level Target = Current Level * 300 score
+    const targetScoreForNextLevel = level * 300;
+    
+    if (score >= targetScoreForNextLevel) {
+      level += 1;
+      sound.levelUp();
+      showLevelBanner(`LEVEL ${level}`);
+      
+      // Logarithmic Police Count Cap (Max 8 Cops) to prevent performance lag at high levels like 900+
+      const requiredCops = Math.min(8, 1 + Math.floor(Math.log2(1 + level)));
+      while (copCars.length < requiredCops) {
+        spawnCop();
+      }
+    }
+  }
+
+  function getMotivationalMessage(reachedLevel) {
+    if (reachedLevel === 1) {
+      return "💡 চমৎকার সূচনা! নিয়মিত অনুশীলনে আপনি খুব শীঘ্রই উচ্চ লেভেলে পৌঁছাবেন!";
+    } else if (reachedLevel <= 10) {
+      return "⚡ দুর্দান্ত গতি! আপনি প্রাথমিক পুলিশ চেজ সফলভাবে পার করেছেন!";
+    } else if (reachedLevel <= 50) {
+      return "🔥 চমৎকার স্টিয়ারিং কন্ট্রোল! আপনি একজন অভিজ্ঞ ড্রাইভারে পরিণত হচ্ছেন!";
+    } else if (reachedLevel <= 200) {
+      return "🏆 অবিশ্বাস্য পারফর্মেন্স! লেভেল ২০০ অতিক্রম করে আপনি রেসিং জগতে ঝড় তুলেছেন!";
+    } else if (reachedLevel <= 500) {
+      return "👑 অনবদ্য কারিশমা! লেভেল ৫০০ একটি অভাবনীয় সাফল্য!";
+    } else if (reachedLevel <= 899) {
+      return `💎 অলৌকিক ড্রাইভিং দক্ষতা! Level ${reachedLevel} ছুয়ে আপনি Level 900 এর দ্বারপ্রান্তে পৌঁছে গেছেন!`;
+    } else if (reachedLevel >= 900) {
+      return `🌟 গড-টিয়ার লেজেন্ডারি লেভেল! আপনি Level ${reachedLevel} অতিক্রম করে কার এস্কেপ গেমের সর্বকালের সেরা রেকর্ড অর্জন করেছেন!`;
+    }
+  }
+
+  function saveScore(finalScore, finalLevel, durationSec) {
+    const history = JSON.parse(localStorage.getItem('carEscapeInfiniteLeaderboard') || '[]');
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' });
+
+    history.push({
+      level: finalLevel,
+      score: Math.floor(finalScore),
+      time: formatTime(durationSec),
+      date: formattedDate
+    });
+
+    history.sort((a, b) => b.level - a.level || b.score - a.score);
+    localStorage.setItem('carEscapeInfiniteLeaderboard', JSON.stringify(history.slice(0, 5)));
+  }
+
+  function renderLeaderboard() {
+    const history = JSON.parse(localStorage.getItem('carEscapeInfiniteLeaderboard') || '[]');
+    const tbody = document.getElementById('leaderboardBody');
+    if (history.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">কোনো পূর্ববর্তী রেকর্ড পাওয়া যায়নি</td></tr>';
+      return;
+    }
+    tbody.innerHTML = history.map((item, index) => `
+      <tr>
+        <td style="font-weight:bold; color:#38bdf8;">${index + 1}</td>
+        <td style="font-weight:bold; color:#f59e0b;">Lvl ${item.level}</td>
+        <td style="font-weight:bold; color:#fff;">${item.score}</td>
+        <td style="color:#10b981;">${item.time}</td>
+        <td style="color:#94a3b8; font-size:11px;">${item.date}</td>
+      </tr>
+    `).join('');
+  }
+
+  function startGame() {
+    sound.init();
+    score = 0;
+    level = 1;
+    gameTime = 0;
+    player.reset();
+    coins = [];
+    copCars = [];
+    particles = [];
+    
+    spawnCoinsNearPlayer(14);
+    spawnCop();
+
+    gameState = 'PLAYING';
+    showLevelBanner('LEVEL 1');
+
+    document.getElementById('hud').classList.remove('hidden');
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('guideScreen').classList.add('hidden');
+    document.getElementById('leaderboardScreen').classList.add('hidden');
+  }
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (gameState === 'PLAYING') {
+      gameTime += 0.016;
+      score += 0.09; // Continuous score gain over time
+      
+      const currentTargetScore = level * 300;
+
+      document.getElementById('timerDisplay').innerText = formatTime(gameTime);
+      document.getElementById('scoreDisplay').innerText = Math.floor(score);
+      document.getElementById('levelDisplay').innerText = `Lvl ${level} (${currentTargetScore})`;
+
+      checkLevelProgression();
+      player.update();
+
+      // Smooth camera follow
+      camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
+      camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
+
+      // Keep spawning active coins
+      if (coins.filter(c => !c.collected).length < 8) {
+        spawnCoinsNearPlayer(8);
+      }
+
+      // Police updates & collision check
+      copCars.forEach(cop => {
+        cop.update();
+        const dist = Math.hypot(cop.x - player.x, cop.y - player.y);
+        if (dist < cop.radius + player.radius) {
+          sound.crash();
+          saveScore(score, level, gameTime);
+          gameState = 'GAMEOVER';
+          
+          document.getElementById('hud').classList.add('hidden');
+          document.getElementById('motivationMsg').innerText = getMotivationalMessage(level);
+          document.getElementById('finalLevelText').innerText = `পৌঁছেছিলেন: Level ${level}`;
+          document.getElementById('finalScoreText').innerText = 'মোট অর্জন: ' + Math.floor(score) + ' পয়েন্ট';
+          document.getElementById('finalTimeText').innerText = 'টিকে থাকার সময়: ' + formatTime(gameTime);
+          document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+      });
+
+      // Coin pickup (+100 score)
+      coins.forEach(coin => {
+        if (!coin.collected) {
+          const dist = Math.hypot(coin.x - player.x, coin.y - player.y);
+          if (dist < 26) {
+            coin.collected = true;
+            score += 100;
+            sound.coin();
+          }
+        }
+      });
+    }
+
+    // Render Infinite Grid Environment
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.lineWidth = 2;
+    const gridSize = 100;
+    const startX = Math.floor(camera.x / gridSize) * gridSize - camera.x;
+    const startY = Math.floor(camera.y / gridSize) * gridSize - camera.y;
+
+    for (let x = startX; x < canvas.width; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = startY; y < canvas.height; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+
+    // Render Particle Trail
+    particles.forEach((p, idx) => {
+      p.life -= 0.025;
+      if (p.life <= 0) {
+        particles.splice(idx, 1);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x - camera.x, p.y - camera.y, p.size || 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+      }
+    });
+
+    // Render Coins
+    coins.forEach(coin => {
+      if (!coin.collected) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(coin.x - camera.x, coin.y - camera.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    });
+
+    // Render Cops & Player
+    copCars.forEach(cop => cop.draw());
+    player.draw();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Event Listeners for UI buttons
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', startGame);
+  document.getElementById('backBtn').addEventListener('click', () => {
+    gameState = 'START';
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+  });
+  document.getElementById('leaderboardBtn').addEventListener('click', () => {
+    renderLeaderboard();
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('leaderboardScreen').classList.remove('hidden');
+  });
+  document.getElementById('closeLeaderboardBtn').addEventListener('click', () => {
+    document.getElementById('leaderboardScreen').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+  });
+  document.getElementById('guideBtn').addEventListener('click', () => {
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('guideScreen').classList.remove('hidden');
+  });
+  document.getElementById('closeGuideBtn').addEventListener('click', () => {
+    document.getElementById('guideScreen').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+  });
+
+  // Start animation loop
+  gameLoop();
+</script>
+</body>
+</html>
