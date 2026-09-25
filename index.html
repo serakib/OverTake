@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>ICE VS FIRE — Pixel Car Racing</title>
+<style>
+:root {
+  --bg: #050812; --panel: #0b1220; --panel2: #101a2d; --line: #1c2a42;
+  --text: #eaf3ff; --muted: #71809d; --ice: #00eaff; --fire: #ff4d21;
+  --gold: #ffd75e; --green: #51f2a7;
+}
+* { box-sizing: border-box; touch-action: manipulation; }
+html, body { height: 100%; margin: 0; user-select: none; }
+body {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(0,234,255,.10), transparent 28%),
+    radial-gradient(circle at 82% 0%, rgba(255,77,33,.10), transparent 28%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, Segoe UI, Arial, sans-serif;
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+
+.app {
+  height: 100vh; display: flex; align-items: center; justify-content: center; padding: 12px;
+}
+.frame {
+  width: min(1180px, 98vw); height: min(900px, 97vh);
+  display: grid; grid-template-rows: 74px 1fr 34px;
+  border: 1px solid #20304b; border-radius: 18px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(8,14,26,.98), rgba(4,8,16,.98));
+  box-shadow: 0 24px 80px rgba(0,0,0,.55), 0 0 60px rgba(0,234,255,.05);
+}
+.header {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 0 18px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #0d1627, #09111f);
+}
+.logo { font-weight: 900; letter-spacing: 4px; font-size: 23px; white-space: nowrap; }
+.logo .ice { color: var(--ice); text-shadow: 0 0 15px rgba(0,234,255,.65); }
+.logo .fire { color: var(--fire); text-shadow: 0 0 15px rgba(255,77,33,.55); }
+.sub { font-size: 9px; color: var(--muted); letter-spacing: 3px; margin-top: 3px; }
+.headerCenter { text-align: center; }
+.headerCenter b { display: block; font-size: 11px; letter-spacing: 2px; color: #b4c3db; }
+.headerRight { justify-self: end; display: flex; gap: 7px; }
+.iconBtn {
+  width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 9px;
+  background: #0e182a; color: #cfe1f9; transition: background .2s;
+}
+.iconBtn:hover { background: #182844; }
+
+.content {
+  min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 286px; gap: 10px; padding: 10px;
+}
+.left {
+  min-width: 0; display: grid; grid-template-rows: auto 1fr auto; min-height: 0;
+  border: 1px solid var(--line); border-radius: 13px; background: #07101c; overflow: hidden;
+}
+.hud {
+  display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; padding: 8px;
+  background: #091321; border-bottom: 1px solid var(--line);
+}
+.stat {
+  min-width: 0; padding: 7px 9px; border: 1px solid #17243a; background: #0b1626; border-radius: 9px;
+}
+.stat small { display: block; color: var(--muted); font-size: 8px; letter-spacing: 1.2px; }
+.stat strong { display: block; font-size: 17px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.ice { color: var(--ice); } .fire { color: var(--fire); } .gold { color: var(--gold); }
+
+.stage {
+  min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px;
+  background: radial-gradient(circle at 50% 30%, rgba(16,37,58,.4), transparent 55%);
+  position: relative;
+}
+#game {
+  display: block; width: auto; height: 100%; max-width: 100%;
+  aspect-ratio: 620/720; background: #060a12; border: 1px solid #263650; border-radius: 10px;
+  box-shadow: inset 0 0 45px rgba(0,0,0,.75), 0 0 30px rgba(0,234,255,.05);
+}
+.controls {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 7px 9px; border-top: 1px solid var(--line); font-size: 10px; color: var(--muted);
+}
+.keys { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+kbd {
+  padding: 4px 6px; border: 1px solid #283a58; border-bottom-width: 2px;
+  border-radius: 5px; background: #101b2d; color: #c8d8ef; font-size: 9px;
+}
+
+.side { min-height: 0; display: grid; grid-template-rows: auto auto 1fr; gap: 10px; }
+.card {
+  border: 1px solid var(--line); border-radius: 13px; background: #091321; padding: 11px; min-height: 0;
+}
+.cardTitle { font-size: 10px; letter-spacing: 1.5px; font-weight: 900; color: #dce9fb; margin-bottom: 9px; }
+.row { display: flex; gap: 7px; }
+.field { flex: 1; }
+.field label { display: block; color: var(--muted); font-size: 8px; margin-bottom: 4px; letter-spacing: .8px; }
+input, select {
+  width: 100%; height: 31px; border-radius: 7px; border: 1px solid #1c2c44; background: #070e1a;
+  color: var(--text); padding: 0 8px; outline: none; font-size: 10px;
+}
+.smallBtn {
+  height: 31px; padding: 0 9px; border-radius: 7px; border: 1px solid #1c2c44;
+  background: #0f1b2d; color: #dceafe; font-size: 9px; font-weight: 800; transition: all .2s;
+}
+.smallBtn:hover { background: #172842; }
+.smallBtn.primary { border-color: #08677a; background: #083448; color: #aef8ff; }
+.smallBtn.primary:hover { background: #0a4964; }
+
+.bar { height: 7px; border-radius: 99px; background: #142036; overflow: hidden; margin-top: 4px; }
+.bar > div { height: 100%; width: 0%; transition: width .1s linear; }
+#boostBar { background: linear-gradient(90deg, #00cde8, #93fbff); }
+#missionBar { background: linear-gradient(90deg, #ffc94a, #ffef9f); }
+
+.miniGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+.mini { padding: 7px; border: 1px solid #17263e; border-radius: 8px; background: #08111e; }
+.mini span { display: block; color: var(--muted); font-size: 7px; }
+.mini b { font-size: 12px; display: block; margin-top: 2px; }
+
+.board { display: grid; gap: 5px; max-height: 220px; overflow-y: auto; }
+.rank {
+  display: grid; grid-template-columns: 20px 1fr auto; gap: 6px; align-items: center;
+  padding: 6px; border-radius: 7px; border: 1px solid #15233a; background: #08111e;
+}
+.rank .n { font-weight: 900; color: var(--gold); font-size: 9px; }
+.rank .name { font-size: 9px; font-weight: 800; }
+.rank .meta { font-size: 7px; color: var(--muted); margin-top: 1px; }
+.rank .sc { font-size: 9px; font-weight: 900; color: var(--ice); }
+.empty { font-size: 9px; color: var(--muted); padding: 9px; border: 1px dashed #263853; border-radius: 7px; text-align: center; }
+
+.footer {
+  display: flex; align-items: center; justify-content: space-between; padding: 0 13px;
+  border-top: 1px solid var(--line); color: #566681; font-size: 8px; letter-spacing: .6px;
+}
+
+.overlay {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(1,4,9,.75); backdrop-filter: blur(5px); z-index: 20;
+}
+.modal {
+  width: min(390px, 90vw); padding: 20px; border: 1px solid #25415a; border-radius: 14px;
+  background: linear-gradient(180deg, #0c1727, #070d17); box-shadow: 0 25px 70px rgba(0,0,0,.6);
+  text-align: center;
+}
+.badge { font-size: 8px; letter-spacing: 2px; color: var(--ice); font-weight: 900; }
+.modal h2 { margin: 7px 0 5px; font-size: 25px; letter-spacing: 2px; }
+.modal p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.modalActions { display: flex; justify-content: center; gap: 7px; margin-top: 14px; }
+.modalBtn {
+  height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #263a55; background: #101c2f;
+  color: #eaf3ff; font-size: 10px; font-weight: 900; transition: all .2s;
+}
+.modalBtn:hover { background: #1a2c47; }
+.modalBtn.primary { background: #073647; border-color: #0a7c91; color: #b7fbff; }
+.modalBtn.primary:hover { background: #0a4f68; }
+.hide { display: none !important; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  padding: 8px 14px; background: #0d1828; border: 1px solid #00eaff; border-radius: 8px;
+  color: #00eaff; font-size: 10px; font-weight: bold; opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s; z-index: 30; box-shadow: 0 0 15px rgba(0,234,255,.3);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-5px); }
+
+/* Touch Controls for Mobile */
+.touchOverlay {
+  display: none; position: absolute; inset: 0; z-index: 10;
+  grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto;
+}
+.touchBtn { background: rgba(255,255,255,0.02); border: none; }
+.touchBtn:active { background: rgba(0,234,255,0.08); }
+.boostTouch { grid-column: 1 / -1; height: 60px; background: rgba(0,234,255,0.05); border-top: 1px solid rgba(0,234,255,0.2); }
+
+@media(max-width: 760px) {
+  body { overflow: auto; } .app { height: auto; min-height: 100vh; padding: 7px; }
+  .frame { height: auto; min-height: calc(100vh - 14px); grid-template-rows: 60px auto 30px; }
+  .content { grid-template-columns: 1fr; }
+  .side { grid-template-columns: 1fr; }
+  .stage { height: 50vh; }
+  .touchOverlay { display: grid; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="frame">
+    <header class="header">
+      <div>
+        <div class="logo"><span class="ice">ICE</span> ❄ VS <span class="fire">FIRE</span> 🔥</div>
+        <div class="sub">PIXEL CAR RACING</div>
+      </div>
+      <div class="headerCenter">
+        <b id="statusText">NEON CIRCUIT • READY</b>
+      </div>
+      <div class="headerRight">
+        <button class="iconBtn" id="sound" title="Toggle Sound">🔊</button>
+        <button class="iconBtn" id="pause" title="Pause Game">Ⅱ</button>
+        <button class="iconBtn" id="reset" title="Reset Game">↺</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="left">
+        <div class="hud">
+          <div class="stat"><small>SCORE</small><strong id="score" class="gold">0</strong></div>
+          <div class="stat"><small>TIME</small><strong id="time">00:00</strong></div>
+          <div class="stat"><small>SPEED</small><strong id="speed" class="ice">0</strong></div>
+          <div class="stat"><small>COMBO</small><strong id="combo" class="fire">x1</strong></div>
+          <div class="stat"><small>LEVEL</small><strong id="level">1</strong></div>
+        </div>
+
+        <div class="stage">
+          <canvas id="game" width="620" height="720"></canvas>
+          <div class="touchOverlay">
+            <button class="touchBtn" id="touchLeft"></button>
+            <button class="touchBtn" id="touchRight"></button>
+            <button class="touchBtn boostTouch" id="touchBoost"></button>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="keys">
+            <kbd>←</kbd><kbd>→</kbd><kbd>A</kbd><kbd>D</kbd><span>STEER</span>
+            <kbd>SPACE</kbd><span>BOOST</span>
+            <kbd>P</kbd><span>PAUSE</span>
+          </div>
+          <span id="message">Awaiting driver...</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="card">
+          <div class="cardTitle">RACE CONTROL</div>
+          <div class="row">
+            <div class="field"><label>DRIVER</label><input id="name" maxlength="14" value="ICE PILOT"></div>
+            <div class="field"><label>DIFFICULTY</label>
+              <select id="difficulty">
+                <option value="normal">NORMAL</option>
+                <option value="hard" selected>HARD</option>
+                <option value="insane">INSANE</option>
+                <option value="nightmare">NIGHTMARE</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:7px">
+            <button class="smallBtn primary" id="start" style="flex:1">▶ START</button>
+            <button class="smallBtn" id="how">HOW TO PLAY</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="cardTitle">ENERGY & MISSION</div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted)">
+            <span>NITRO BOOST</span><b id="boostText" style="color:var(--ice)">100%</b>
+          </div>
+          <div class="bar"><div id="boostBar"></div></div>
+          
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:10px">
+            <span>MISSION TARGET</span><b id="missionText" style="color:var(--gold)">500 PTS</b>
+          </div>
+          <div class="bar"><div id="missionBar"></div></div>
+
+          <div class="miniGrid">
+            <div class="mini"><span>BEST</span><b id="best">0</b></div>
+            <div class="mini"><span>NEAR MISSES</span><b id="near">0</b></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="cardTitle">🏆 LOCAL LEADERBOARD</div>
+          <div class="board" id="board"></div>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="footer">
+      <span>ICE VS FIRE // SINGLE-FRAME ARCADE BUILD</span>
+      <span>LOCAL SCORES • NO SERVER REQUIRED</span>
+    </footer>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="badge">NEON CIRCUIT</div>
+    <h2 id="modalTitle">ICE VS FIRE</h2>
+    <p id="modalText">Dodge FIRE cars, collect cyan energy cores, complete missions to level up instantly!</p>
+    <div class="modalActions">
+      <button class="modalBtn primary" id="modalStart">▶ START RACE</button>
+      <button class="modalBtn" id="modalClose">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // Elements
+  const $ = id => document.getElementById(id);
+  const canvas = $("game"), ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  // Configuration
+  const cfg = {
+    normal: { sp: 180, rate: 1.0 },
+    hard: { sp: 235, rate: .72 },
+    insane: { sp: 295, rate: .56 },
+    nightmare: { sp: 350, rate: .43 }
+  };
+
+  // State Variables
+  let keys = new Set(), touchState = { left: false, right: false, boost: false };
+  let raf = 0, last = 0, running = false, paused = false, over = false, sound = true;
+  let score = 0, time = 0, combo = 1, level = 1, energy = 100, near = 0, spawn = 0, coreSpawn = 0, shake = 0;
+  let missionTarget = 500, missionBase = 0;
+  let player = { x: W / 2, y: H - 95, w: 38, h: 62, vx: 0, inv: 0 };
+  let cars = [], cores = [], parts = [];
+  let ac = null;
+
+  // Sound Engine
+  function initAudio() {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+  }
+
+  function beep(f = 500, d = .05, t = "square") {
+    if (!sound) return;
+    try {
+      initAudio();
+      let o = ac.createOscillator(), g = ac.createGain();
+      o.type = t; o.frequency.value = f;
+      g.gain.value = .025;
+      o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime + d);
+    } catch (e) {}
+  }
+
+  // Utilities
+  function fmt(s) {
+    s = Math.floor(s);
+    return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  }
+
+  function say(t) { $("message").textContent = t; }
+
+  function toast(t) {
+    $("toast").textContent = t;
+    $("toast").classList.add("show");
+    setTimeout(() => $("toast").classList.remove("show"), 1500);
+  }
+
+  // Leaderboard
+  function board() {
+    try { return JSON.parse(localStorage.getItem("iceFireBoard2") || "[]"); } catch { return []; }
+  }
+
+  function saveBoard(a) {
+    localStorage.setItem("iceFireBoard2", JSON.stringify(a.slice(0, 8)));
+  }
+
+  function renderBoard() {
+    let b = board();
+    $("board").innerHTML = b.length 
+      ? b.map((r, i) => `<div class="rank"><span class="n">#${i + 1}</span><div><div class="name">${esc(r.name)}</div><div class="meta">${r.time} • LVL ${r.level}</div></div><span class="sc">${r.score}</span></div>`).join("")
+      : `<div class="empty">No records yet. Set the first record!</div>`;
+    $("best").textContent = b[0]?.score || 0;
+  }
+
+  // UI Modal Management
+  function show(title, text) {
+    $("modalTitle").textContent = title;
+    $("modalText").textContent = text;
+    $("overlay").classList.remove("hide");
+  }
+
+  function hide() { $("overlay").classList.add("hide"); }
+
+  // Game Loop Controls
+  function reset() {
+    cancelAnimationFrame(raf);
+    running = false; paused = false; over = false;
+    score = 0; time = 0; combo = 1; level = 1; energy = 100; near = 0; spawn = 0; coreSpawn = 0; shake = 0;
+    missionTarget = 500; missionBase = 0;
+    cars = []; cores = []; parts = [];
+    player = { x: W / 2, y: H - 95, w: 38, h: 62, vx: 0, inv: 0 };
+    $("pause").textContent = "Ⅱ";
+    $("statusText").textContent = "NEON CIRCUIT • READY";
+    say("Awaiting driver...");
+    updateUI(); draw();
+    show("ICE VS FIRE", "Dodge FIRE cars, collect energy cores, build combos and complete missions to level up!");
+  }
+
+  function start() {
+    initAudio();
+    if (running) return;
+    if (over) reset();
+    running = true; paused = false; over = false; hide();
+    last = performance.now();
+    $("statusText").textContent = "RACE LIVE • NEON CIRCUIT";
+    say("Stay focused — speed is rising!");
+    beep(720, .09);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function finish(reason) {
+    running = false; over = true;
+    beep(85, .26, "sawtooth");
+    let b = board();
+    b.push({ name: $("name").value.trim() || "ICE PILOT", score: Math.floor(score), time: fmt(time), level });
+    b.sort((a, b) => b.score - a.score);
+    saveBoard(b); renderBoard();
+    $("statusText").textContent = "RACE OVER";
+    say("Record saved locally.");
+    show(reason, `Final Score: ${Math.floor(score)} | Time: ${fmt(time)} | Level Reached: ${level}`);
+  }
+
+  // Dynamic Mission & Real-time Level Progress System
+  function checkMissionProgress() {
+    let progress = Math.min(100, Math.max(0, ((score - missionBase) / (missionTarget - missionBase)) * 100));
+    $("missionBar").style.width = progress + "%";
+
+    if (score >= missionTarget) {
+      // 1. Instantly level up on mission complete
+      level += 1;
+      beep(1100, .15, "triangle");
+      toast(`MISSION COMPLETE! LEVEL ${level} UNLOCKED! 🎉`);
+
+      // 2. Set up next dynamic mission target
+      missionBase = missionTarget;
+      missionTarget += 600 + (level * 250);
+
+      // 3. Re-calculate mission bar & UI text immediately
+      $("missionBar").style.width = "0%";
+      $("missionText").textContent = missionTarget + " PTS";
+    } else {
+      $("missionText").textContent = missionTarget + " PTS";
+    }
+  }
+
+  function updateUI() {
+    $("score").textContent = Math.floor(score);
+    $("time").textContent = fmt(time);
+    $("speed").textContent = Math.floor(cfg[$("difficulty").value].sp + (level - 1) * 12);
+    $("combo").textContent = "x" + Math.max(1, Math.floor(combo));
+    $("level").textContent = level; // Updated real-time!
+    
+    $("boostText").textContent = Math.floor(energy) + "%";
+    $("boostBar").style.width = energy + "%";
+    $("near").textContent = near;
+
+    checkMissionProgress();
+  }
+
+  // Spawning System
+  function spawnCar() {
+    const d = cfg[$("difficulty").value];
+    const lane = 60 + Math.random() * (W - 120);
+    cars.push({ x: lane, y: -80, w: 38, h: 60, vy: d.sp * (.8 + Math.random() * .4), s: Math.random() * 6.28, passed: false });
+  }
+
+  function spawnCore() {
+    cores.push({ x: 58 + Math.random() * (W - 116), y: -24, r: 9, vy: 120 + level * 6, rot: 0 });
+  }
+
+  function hit(a, b) {
+    return Math.abs(a.x - b.x) < (a.w + b.w) * .43 && Math.abs(a.y - b.y) < (a.h + b.h) * .43;
+  }
+
+  function burst(px, py, col, n = 14) {
+    for (let i = 0; i < n; i++) {
+      parts.push({ x: px, y: py, vx: (Math.random() - .5) * 160, vy: (Math.random() - .5) * 160, life: .4 + Math.random() * .35, c: col, s: 2 + Math.random() * 3 });
+    }
+  }
+
+  // Main Physics Update
+  function update(dt) {
+    time += dt;
+
+    // Control directions (Keyboard + Touch)
+    let moveLeft = keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || touchState.left;
+    let moveRight = keys.has("ArrowRight") || keys.has("d") || keys.has("D") || touchState.right;
+    let boost = (keys.has(" ") || touchState.boost) && energy > 0;
+
+    let dir = moveLeft ? -1 : (moveRight ? 1 : 0);
+    player.vx += (dir * 450 - player.vx) * Math.min(1, dt * 10);
+    player.x += player.vx * dt;
+    player.x = Math.max(45, Math.min(W - 45, player.x));
+
+    if (boost) {
+      energy = Math.max(0, energy - dt * 30);
+      player.inv = .08;
+    } else {
+      energy = Math.min(100, energy + dt * 4.8);
+    }
+    if (player.inv > 0) player.inv -= dt;
+
+    spawn += dt; coreSpawn += dt;
+    let d = cfg[$("difficulty").value];
+    let rate = Math.max(.22, d.rate - (level - 1) * .022);
+
+    if (spawn > rate) {
+      spawn = 0; spawnCar();
+      if (level > 5 && Math.random() < .35) spawnCar();
+    }
+    if (coreSpawn > Math.max(.5, 1.1 - level * .018)) {
+      coreSpawn = 0; spawnCore();
+    }
+
+    // Cars Logic
+    for (const q of cars) {
+      q.y += (q.vy + level * 9) * (boost ? 1.4 : 1) * dt;
+      q.s += dt * 3; q.x += Math.sin(q.s) * 9 * dt;
+
+      if (hit(player, q) && player.inv <= 0) {
+        burst(player.x, player.y, "#ff4d21", 28);
+        shake = .35;
+        finish("FIRE COLLISION");
+        return;
+      }
+
+      if (q.y > H + 70 && !q.passed) {
+        q.passed = true; near++;
+        score += 10 * combo;
+        combo = Math.min(20, combo + .7);
+        beep(820, .035);
+      }
+    }
+    cars = cars.filter(q => q.y < H + 90);
+
+    // Energy Cores Logic
+    for (const q of cores) {
+      q.y += q.vy * (boost ? 1.35 : 1) * dt; q.rot += dt * 5;
+      if (Math.hypot(player.x - q.x, player.y - q.y) < 34) {
+        score += 60 * combo;
+        combo = Math.min(20, combo + 1);
+        energy = Math.min(100, energy + 15);
+        burst(q.x, q.y, "#00eaff", 18);
+        beep(1000, .07, "triangle");
+        q.dead = true;
+      }
+    }
+    cores = cores.filter(q => !q.dead && q.y < H + 30);
+
+    // Passive updates
+    combo = Math.max(1, combo - dt * .075);
+    score += dt * (4 + level * .6) * (boost ? 1.3 : 1);
+    
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.vy += 80 * dt; });
+    parts = parts.filter(p => p.life > 0);
+
+    if (shake > 0) shake -= dt;
+
+    updateUI();
+  }
+
+  // Rendering Functions
+  function car(px, py, w, h, col) {
+    ctx.save(); ctx.translate(px, py);
+    ctx.shadowBlur = 18; ctx.shadowColor = col;
+    round(-w / 2, -h / 2, w, h, 6, col);
+    ctx.shadowBlur = 0;
+    round(-w * .3, -h * .27, w * .6, h * .28, 3, "#0b1522");
+    ctx.fillStyle = "#fff3b0"; ctx.fillRect(-w * .25, -h * .02, w * .5, 4);
+    ctx.fillStyle = col;
+    ctx.fillRect(-w * .42, -h * .36, w * .12, h * .18);
+    ctx.fillRect(w * .30, -h * .36, w * .12, h * .18);
+    ctx.fillRect(-w * .42, h * .18, w * .12, h * .18);
+    ctx.fillRect(w * .30, h * .18, w * .12, h * .18);
+    ctx.restore();
+  }
+
+  function round(px, py, w, h, r, fill) {
+    ctx.beginPath(); ctx.roundRect(px, py, w, h, r);
+    ctx.fillStyle = fill; ctx.fill();
+  }
+
+  function draw() {
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - .5) * 7, (Math.random() - .5) * 7);
+
+    // Track Background
+    ctx.fillStyle = "#060a12"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#090f1b"; ctx.fillRect(48, 0, W - 96, H);
+
+    // Borders
+    ctx.strokeStyle = "#00eaff"; ctx.lineWidth = 4; ctx.shadowBlur = 20; ctx.shadowColor = "#00eaff";
+    ctx.beginPath(); ctx.moveTo(48, 0); ctx.lineTo(48, H); ctx.stroke();
+
+    ctx.strokeStyle = "#ff4d21"; ctx.shadowColor = "#ff4d21";
+    ctx.beginPath(); ctx.moveTo(W - 48, 0); ctx.lineTo(W - 48, H); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Road Grid Lines
+    let t = performance.now() / 1000;
+    ctx.strokeStyle = "#565e73"; ctx.lineWidth = 2; ctx.setLineDash([22, 22]);
+    ctx.beginPath(); ctx.moveTo(W / 2, (t * 100) % 44 - 44); ctx.lineTo(W / 2, H); ctx.stroke();
+    ctx.setLineDash([]);
+
+    for (let y = (t * 70) % 50 - 50; y < H; y += 50) {
+      ctx.fillStyle = "rgba(0,234,255,.045)"; ctx.fillRect(58, y, W - 116, 1);
+    }
+
+    // Cores Rendering
+    cores.forEach(q => {
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot);
+      ctx.fillStyle = "#00eaff"; ctx.shadowBlur = 18; ctx.shadowColor = "#00eaff";
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        let a = i * Math.PI / 4, r = i % 2 ? q.r * .58 : q.r;
+        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    });
+
+    // Enemy Cars & Player Car
+    cars.forEach(q => car(q.x, q.y, q.w, q.h, "#ff4d21"));
+    if (player.inv <= 0 || Math.floor(performance.now() / 75) % 2 === 0) {
+      car(player.x, player.y, player.w, player.h, "#00eaff");
+    }
+
+    // Nitro Flames
+    if ((keys.has(" ") || touchState.boost) && energy > 0) {
+      for (let i = 0; i < 4; i++) {
+        ctx.fillStyle = `rgba(0,234,255,${.30 - i * .06})`;
+        ctx.fillRect(player.x - 5 + (Math.random() * 10), player.y + 32 + i * 10, 4, 10);
+      }
+    }
+
+    // Particles
+    parts.forEach(p => {
+      ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.c;
+      ctx.fillRect(p.x, p.y, p.s, p.s);
+    });
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+
+  function loop(now) {
+    if (!running || paused) return;
+    let dt = Math.min(.035, (now - last) / 1000);
+    last = now;
+    update(dt); draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  // Event Listeners (Keyboard)
+  window.addEventListener("keydown", e => {
+    initAudio();
+    if (["ArrowLeft", "ArrowRight", "a", "d", "A", "D", " ", "p", "P"].includes(e.key)) e.preventDefault();
+    keys.add(e.key);
+    if ((e.key === "p" || e.key === "P") && running) $("pause").click();
+    if (e.key === "Enter" && !running) $("start").click();
+  });
+
+  window.addEventListener("keyup", e => keys.delete(e.key));
+
+  // Touch Control Listeners (Mobile)
+  const bindTouch = (id, prop) => {
+    const el = $(id);
+    el.addEventListener("touchstart", e => { e.preventDefault(); initAudio(); touchState[prop] = true; });
+    el.addEventListener("touchend", e => { e.preventDefault(); touchState[prop] = false; });
+  };
+  bindTouch("touchLeft", "left");
+  bindTouch("touchRight", "right");
+  bindTouch("touchBoost", "boost");
+
+  // Control Buttons
+  $("start").onclick = start;
+  $("reset").onclick = reset;
+  $("sound").onclick = () => {
+    sound = !sound;
+    $("sound").textContent = sound ? "🔊" : "🔇";
+    if (sound) beep(650, .05);
+  };
+  $("pause").onclick = () => {
+    if (!running) return;
+    paused = !paused;
+    $("pause").textContent = paused ? "▶" : "Ⅱ";
+    if (paused) show("PAUSED", "Race is paused. Resume whenever you're ready.");
+    else { hide(); last = performance.now(); raf = requestAnimationFrame(loop); }
+  };
+  $("modalStart").onclick = () => {
+    if (paused) {
+      paused = false; hide(); $("pause").textContent = "Ⅱ";
+      last = performance.now(); raf = requestAnimationFrame(loop);
+    } else start();
+  };
+  $("modalClose").onclick = () => hide();
+  $("how").onclick = () => show("HOW TO PLAY", "Steer with ← → or A/D (or touch sides). Hold SPACE to boost. Collect cyan cores for points. Completing missions levels you up instantly!");
+  $("difficulty").onchange = () => { if (!running) updateUI(); };
+
+  // Init Game Execution
+  renderBoard(); updateUI(); draw();
+  show("ICE VS FIRE", "Single-frame arcade racing build. Dynamic leveling & instant UI updates applied.");
+})();
+</script>
+</body>
+</html>
